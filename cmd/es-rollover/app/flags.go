@@ -28,10 +28,12 @@ const (
 	useILM        = "es.use-ilm"
 	ilmPolicyName = "es.ilm-policy-name"
 	timeout       = "timeout"
+	indexType	  = "indexType"
 )
 
 // Config holds the global configurations for the es rollover, common to all actions
 type Config struct {
+	IndexType     string
 	IndexPrefix   string
 	Archive       bool
 	Username      string
@@ -51,6 +53,7 @@ func AddFlags(flags *flag.FlagSet) {
 	flags.Bool(useILM, false, "Use ILM to manage jaeger indices")
 	flags.String(ilmPolicyName, "jaeger-ilm-policy", "The name of the ILM policy to use if ILM is active")
 	flags.Int(timeout, 120, "Number of seconds to wait for master node response")
+	flags.String(indexType, "jaeger-span", "type of index to apply the rollover to, jaeger-span OR jaeger-service")
 }
 
 // InitFromViper initializes config from viper.Viper.
@@ -62,4 +65,5 @@ func (c *Config) InitFromViper(v *viper.Viper) {
 	c.ILMPolicyName = v.GetString(ilmPolicyName)
 	c.UseILM = v.GetBool(useILM)
 	c.Timeout = v.GetInt(timeout)
+	c.IndexType = v.GetString(indexType)
 }

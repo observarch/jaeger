@@ -15,10 +15,25 @@
 package filter
 
 import (
+	"sort"
 	"time"
 
 	"github.com/jaegertracing/jaeger/pkg/es/client"
 )
+
+// KeepNewestN keep the newest N indicies and return what is leftover
+func KeepNewestN(indices []client.Index, count int) []client.Index {
+	if len(indices) <= count {
+		return make([]client.Index,0)
+	}
+
+	//sort by creation time desc
+	sort.SliceStable(indices, func(i, j int) bool {
+		return indices[j].CreationTime.Before(indices[i].CreationTime)
+	})
+
+	return indices[count:]
+}
 
 // ByDate filter indices by creationTime, return indices that were created before certain date.
 func ByDate(indices []client.Index, beforeThisDate time.Time) []client.Index {

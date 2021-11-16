@@ -61,7 +61,12 @@ type IndicesClient struct {
 //     aliases: jaeger-span-archive-read, jaeger-span-archive-write
 //         indices: jaeger-span-archive-000001
 func (i *IndicesClient) GetJaegerIndices(prefix string) ([]Index, error) {
-	prefix += "jaeger-*"
+
+	if !strings.HasSuffix(prefix, "-") {
+		prefix += "-jaeger-*"
+	} else {
+		prefix += "jaeger-*"
+	}
 
 	body, err := i.request(elasticRequest{
 		endpoint: fmt.Sprintf("%s?flat_settings=true&filter_path=*.aliases,*.settings", prefix),

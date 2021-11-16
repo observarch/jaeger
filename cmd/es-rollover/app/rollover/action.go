@@ -16,6 +16,9 @@ package rollover
 
 import (
 	"encoding/json"
+	"fmt"
+
+	"go.uber.org/zap"
 
 	"github.com/jaegertracing/jaeger/cmd/es-rollover/app"
 	"github.com/jaegertracing/jaeger/pkg/es/client"
@@ -26,11 +29,12 @@ import (
 type Action struct {
 	Config
 	IndicesClient client.IndexAPI
+	Logger        *zap.Logger
 }
 
 // Do the rollover action
 func (a *Action) Do() error {
-	rolloverIndices := app.RolloverIndices(a.Config.Archive, a.Config.IndexPrefix)
+	rolloverIndices := app.RolloverIndices(a.Config.Archive, a.Config.IndexType, a.Config.IndexPrefix)
 	for _, indexName := range rolloverIndices {
 		if err := a.rollover(indexName); err != nil {
 			return err
@@ -68,7 +72,14 @@ func (a *Action) rollover(indexSet app.IndexOption) error {
 		})
 	}
 	if len(aliases) == 0 {
+		a.Logger.Info("Found no new aliases to create")
 		return nil
 	}
+
+	a.Logger.Info(fmt.Sprintf("Creating %d aliases", len(aliases)))
+	for _, alias := range aliases {
+		a.Logger.Info(fmt.Sprintf("Creating alias %s on index %s.  writeindex? %v", alias.Name, alias.Index, alias.IsWriteIndex))
+	}
+
 	return a.IndicesClient.CreateAlias(aliases)
 }

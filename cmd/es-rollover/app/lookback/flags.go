@@ -23,10 +23,12 @@ import (
 )
 
 const (
+	deleteIndex      = "deleteIndex"
 	unit             = "unit"
 	unitCount        = "unit-count"
-	defaultUnit      = "days"
-	defaultUnitCount = 1
+	defaultUnit      = "count"
+	defaultUnitCount = 5
+	defaultDeleteIndex = false
 )
 
 // Config holds configuration for index cleaner binary.
@@ -34,16 +36,19 @@ type Config struct {
 	app.Config
 	Unit      string
 	UnitCount int
+	DeleteIndex bool
 }
 
 // AddFlags adds flags for TLS to the FlagSet.
 func (c *Config) AddFlags(flags *flag.FlagSet) {
-	flags.String(unit, defaultUnit, "used with lookback to remove indices from read alias e.g, days, weeks, months, years")
+	flags.String(unit, defaultUnit, "used with lookback to remove indices from read alias e.g, days, weeks, months, years OR by 'count' of indexes")
 	flags.Int(unitCount, defaultUnitCount, "count of UNITs")
+	flags.Bool(deleteIndex, defaultDeleteIndex, "delete index instead of just deleting the alias")
 }
 
 // InitFromViper initializes config from viper.Viper.
 func (c *Config) InitFromViper(v *viper.Viper) {
 	c.Unit = v.GetString(unit)
 	c.UnitCount = v.GetInt(unitCount)
+	c.DeleteIndex = v.GetBool(deleteIndex)
 }

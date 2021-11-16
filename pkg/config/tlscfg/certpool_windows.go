@@ -63,10 +63,10 @@ func appendCerts(rootCAs *x509.CertPool) (*x509.CertPool, error) {
 }
 
 func loadSystemCertPool() (*x509.CertPool, error) {
-	certPool, err := systemCertPool()
-	if err != nil {
-		return nil, err
-	}
+	certPool, _ := systemCertPool()
+	//if err != nil {
+	//	return nil, err
+	//}
 	if certPool == nil {
 		certPool = x509.NewCertPool()
 	}

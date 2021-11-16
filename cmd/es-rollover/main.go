@@ -106,6 +106,7 @@ func main() {
 				return &rollover.Action{
 					IndicesClient: indicesClient,
 					Config:        *rolloverCfg,
+					Logger: 	   logger,
 				}
 			})
 		},

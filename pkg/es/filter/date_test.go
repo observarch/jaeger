@@ -23,6 +23,45 @@ import (
 	"github.com/jaegertracing/jaeger/pkg/es/client"
 )
 
+func TestByNewestN(t *testing.T) {
+	expectedIndices := []client.Index{
+		{
+			Index:        "jaeger-span-0001",
+			CreationTime: time.Date(2021, 8, 16, 11, 00, 00, 00, time.Local),
+			Aliases: map[string]bool{
+				"jaeger-span-other": true,
+			},
+		},
+	}
+
+	indices := []client.Index{
+		{
+			Index:        "jaeger-span-0002",
+			CreationTime: time.Date(2021, 9, 16, 11, 00, 00, 00, time.Local),
+			Aliases: map[string]bool{
+				"jaeger-span-other": true,
+			},
+		},
+		{
+			Index:        "jaeger-span-0001",
+			CreationTime: time.Date(2021, 8, 16, 11, 00, 00, 00, time.Local),
+			Aliases: map[string]bool{
+				"jaeger-span-other": true,
+			},
+		},
+		{
+			Index:        "jaeger-span-0003",
+			CreationTime: time.Date(2021, 10, 10, 9, 56, 34, 25, time.Local),
+			Aliases: map[string]bool{
+				"custom-alias": true,
+			},
+		},
+	}
+
+	result := ByNewestN(indices, 2)
+	assert.Equal(t, expectedIndices, result)
+}
+
 func TestByDate(t *testing.T) {
 	beforeDateFilter := time.Date(2021, 10, 10, 12, 00, 00, 00, time.Local)
 	expectedIndices := []client.Index{

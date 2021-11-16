@@ -31,7 +31,7 @@ type IndexOption struct {
 }
 
 // RolloverIndices return an array of indices to rollover
-func RolloverIndices(archive bool, prefix string) []IndexOption {
+func RolloverIndices(archive bool, indexType string, prefix string) []IndexOption {
 	if archive {
 		return []IndexOption{
 			{
@@ -41,18 +41,28 @@ func RolloverIndices(archive bool, prefix string) []IndexOption {
 			},
 		}
 	}
-	return []IndexOption{
-		{
-			prefix:    prefix,
-			Mapping:   "jaeger-span",
-			indexType: "jaeger-span",
-		},
-		{
-			prefix:    prefix,
-			Mapping:   "jaeger-service",
-			indexType: "jaeger-service",
-		},
+
+	spanIndex := IndexOption{
+		prefix:    prefix,
+		Mapping:   "jaeger-span",
+		indexType: "jaeger-span",
 	}
+
+	serviceIndex := IndexOption{
+		prefix:    prefix,
+		Mapping:   "jaeger-service",
+		indexType: "jaeger-service",
+	}
+
+	if indexType == "" {
+		return []IndexOption{spanIndex, serviceIndex}
+	}
+
+	if indexType == "jaeger-span" {
+		return []IndexOption{spanIndex}
+	}
+
+	return []IndexOption{serviceIndex}
 }
 
 func (i *IndexOption) IndexName() string {

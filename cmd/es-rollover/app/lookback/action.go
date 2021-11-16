@@ -15,6 +15,7 @@
 package lookback
 
 import (
+	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -35,7 +36,7 @@ type Action struct {
 
 // Do the lookback action
 func (a *Action) Do() error {
-	rolloverIndices := app.RolloverIndices(a.Config.Archive, a.Config.IndexPrefix)
+	rolloverIndices := app.RolloverIndices(a.Config.Archive, a.Config.IndexType, a.Config.IndexPrefix)
 	for _, indexName := range rolloverIndices {
 		if err := a.lookback(indexName); err != nil {
 			return err
@@ -50,10 +51,17 @@ func (a *Action) lookback(indexSet app.IndexOption) error {
 		return err
 	}
 
+	var finalIndices []client.Index
 	readAliasName := indexSet.ReadAliasName()
 	readAliasIndices := filter.ByAlias(jaegerIndex, []string{readAliasName})
 	excludedWriteIndex := filter.ByAliasExclude(readAliasIndices, []string{indexSet.WriteAliasName()})
-	finalIndices := filter.ByDate(excludedWriteIndex, getTimeReference(timeNow(), a.Unit, a.UnitCount))
+
+	if a.Unit == "count" {
+		a.Logger.Info(fmt.Sprintf("Keeping the newest %d indexes, removing the rest", a.UnitCount))
+		finalIndices = filter.KeepNewestN(excludedWriteIndex, a.UnitCount)
+	} else {
+		finalIndices = filter.ByDate(excludedWriteIndex, getTimeReference(timeNow(), a.Unit, a.UnitCount))
+	}
 
 	if len(finalIndices) == 0 {
 		a.Logger.Info("No indices to remove from alias", zap.String("readAliasName", readAliasName))
@@ -71,5 +79,11 @@ func (a *Action) lookback(indexSet app.IndexOption) error {
 		a.Logger.Info("To be removed", zap.String("index", index.Index), zap.String("creationTime", index.CreationTime.String()))
 	}
 
-	return a.IndicesClient.DeleteAlias(aliases)
+	if a.DeleteIndex {
+		a.Logger.Info(fmt.Sprintf("Deleting the oldest %d indexes", len(finalIndices) ))
+		return a.IndicesClient.DeleteIndices(finalIndices)
+	} else {
+		a.Logger.Info(fmt.Sprintf("Removing the alias on %d indexes", len(finalIndices) ))
+		return a.IndicesClient.DeleteAlias(aliases)
+	}
 }
